@@ -1,0 +1,30 @@
+{
+  "name": "airadio",
+  "version": "1.0.0",
+  "description": "[x] obter o pais via ip\r [X] obter principais cidades \r [X] obter noticias do pais \r [] obter tempo das principais cidades\r [] obter transito das principais cidades\r [] criar text2speech na lingua do pais\r [] obter trends de musica do pais\r [] obter 6 musicas das trends",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "JOAO ROCHA",
+  "license": "MIT",
+  "dependencies": {
+    "geoip-lite": "^1.3.7",
+    "iplocation": "^6.1.0",
+    "newsapi": "^2.4.0",
+    "public-ip": "^3.1.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joaofiliperocha/airadio.git"
+  },
+  "keywords": [
+    "AI",
+    "RADIO"
+  ],
+  "bugs": {
+    "url": "https://github.com/joaofiliperocha/airadio/issues"
+  },
+  "homepage": "https://github.com/joaofiliperocha/airadio#readme"
+}
