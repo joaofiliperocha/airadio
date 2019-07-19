@@ -62,3 +62,6 @@ typings/
 
 # credentials
 Credentials/*.json
+
+#data
+airadiodata.json

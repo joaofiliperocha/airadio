@@ -1,4 +1,6 @@
 const http = require('http');
+const axios = require('axios');
+const cheerio = require('cheerio');
 const iplocation = require("iplocation").default;
 const newsapiKey = require('./Credentials/newsapi.json').APIKey;
 const openWeatherapiKey = require('./Credentials/openWeather.json').APIKey;
@@ -20,9 +22,10 @@ async function start() {
     await fetchTrafficForMajorCities(mainData);
     await fetchTrendMusic(mainData);
 
+
     state.save(mainData);
 
-    console.dir(mainData, { deepest: null });
+    console.log(mainData);
 
     async function fetchPublicIP(mainData) {
         return new Promise((resolve, reject) => {
@@ -133,19 +136,19 @@ async function start() {
                             const temp_maxC = tempData.main.temp - 273.15;
                             const temp_maxF = temp_maxC * (9 / 5) + 32;
                             const record = {
-                                "city": majorCity.city,
-                                "temp": tempData.main.temp,
-                                "tempC": tempC.toFixed(2),
-                                "tempF": tempF.toFixed(2),
-                                "temp_min": tempData.main.temp_min,
-                                "temp_minC": temp_minC.toFixed(2),
-                                "temp_minF": temp_minF.toFixed(2),
-                                "temp_maxC": temp_maxC.toFixed(2),
-                                "temp_maxF": temp_maxF.toFixed(2),
-                                "temp_max": tempData.main.temp_max,
-                                "desc": tempData.weather.map(item => { return item.description })
-                            }
-                            //  console.log(record);
+                                    "city": majorCity.city,
+                                    "temp": tempData.main.temp,
+                                    "tempC": tempC.toFixed(2),
+                                    "tempF": tempF.toFixed(2),
+                                    "temp_min": tempData.main.temp_min,
+                                    "temp_minC": temp_minC.toFixed(2),
+                                    "temp_minF": temp_minF.toFixed(2),
+                                    "temp_maxC": temp_maxC.toFixed(2),
+                                    "temp_maxF": temp_maxF.toFixed(2),
+                                    "temp_max": tempData.main.temp_max,
+                                    "desc": tempData.weather.map(item => { return item.description })
+                                }
+                                //  console.log(record);
                             resolve(record);
                         } catch (error) {
                             reject(error);
@@ -161,16 +164,18 @@ async function start() {
     }
 
     async function fetchTrafficForMajorCities(mainData) {
+        // mainData = state.load();
         for (let index = 0; index < mainData.majorCities.length; index++) {
             const city = mainData.majorCities[index];
             const cityTraffic = await getCityTraffic(city);
             mainData.majorCities[index].traffic = cityTraffic
         }
+
     }
 
     function getCityTraffic(cityData) {
         const url = `http://traffic.cit.api.here.com/traffic/6.3/incidents.json?prox=${cityData.latitude},${cityData.longitude},15000&criticality=0,1&maxresults=7&app_id=${hereKeys.AppID}&app_code=${hereKeys.AppCode}`
-        //console.log(url);
+            //console.log(url);
         return new Promise((resolve, reject) => {
             http.get(url, (res) => {
                 if (res.statusCode == 200) {
@@ -181,15 +186,15 @@ async function start() {
                         try {
                             const TRAFFIC_ITEMS = JSON.parse(rawData).TRAFFIC_ITEMS;
                             if (!TRAFFIC_ITEMS)
-                                resolve();
+                                resolve([]);
                             const trafficDesc = TRAFFIC_ITEMS.TRAFFIC_ITEM.map((item) => {
-                                const traffdesc = item.TRAFFIC_ITEM_DESCRIPTION.map((desc, idx) => {
-                                    if (desc && idx == 1)
-                                        return desc.value;
-                                });
-                                return traffdesc.filter((el) => { return el });
-                            })
-                            // console.log(trafficDesc);
+                                    const traffdesc = item.TRAFFIC_ITEM_DESCRIPTION.map((desc, idx) => {
+                                        if (desc && idx == 1)
+                                            return desc.value;
+                                    });
+                                    return traffdesc.filter((el) => { return el });
+                                })
+                                // console.log(trafficDesc);
 
                             resolve(trafficDesc);
                         } catch (error) {
@@ -204,6 +209,42 @@ async function start() {
 
 
     async function fetchTrendMusic(mainData) {
+        //mainData = state.load();
+        var country = 'global';
+        if (mainData && mainData.geoIPData && mainData.geoIPData.country) {
+            country = mainData.geoIPData.country.toLowerCase();
+        }
+        const url = `https://spotifycharts.com/regional/${country}/daily/latest`;
+        //  console.log(url);
+        await axios(url)
+            .then(response => {
+                const html = response.data;
+                const $ = cheerio.load(html)
+                const statsTable = $('.chart-table > tbody > tr');
+                //console.log(statsTable.length);
+                const musicTracks = [];
+                for (let i = 0; i < 12; i++) {
+                    const item = statsTable[i];
+                    const trackUrl = $(item).find('.chart-table-image > a').attr('href');
+                    //console.log(trackUrl);
+                    const trackImage = $(item).find('.chart-table-image > a > img').attr('src');
+                    const track = $(item).find('.chart-table-track > strong').text();
+                    const artist = $(item).find('.chart-table-track > span').text();
+                    // console.log(musicTracks);
+                    musicTracks.push({
+                        "trackUrl": trackUrl,
+                        "trackImage": trackImage,
+                        "trackName": track,
+                        "artist": artist
+                    });
+
+
+                }
+
+                mainData.musicTracks = musicTracks;
+            })
+            .catch(console.error);
+
 
     }
 
